@@ -1,11 +1,13 @@
 ---
-- include_role:
+- name: Install mypackages using azmodude.packages role
+  include_role:
     name: azmodude.packages
   vars:
     packages: "{{ mypackages }}"
 
 - debug:
     msg: "Not installing any packages, no package list defined for {{ ansible_distribution }}"
+  when: mypackages[ansible_distribution] is not defined
 
 - name: Check if User exists to install for
   getent:
@@ -21,7 +23,7 @@
   become: yes
   become_user: "{{ user }}"
   register: gitdotfiles
-  when: not getent.failed
+  when: getent.failed is not defined
 
 - name: Install dotfiles
   command: ./install
