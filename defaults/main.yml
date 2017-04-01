@@ -1,0 +1,11 @@
+---
+common:
+  - zsh
+  - git
+
+packages:
+  Ubuntu:
+    - "{{ common }}"
+
+  CentOS:
+    - "{{ common }}"
