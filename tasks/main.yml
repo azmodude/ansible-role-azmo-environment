@@ -1,0 +1,28 @@
+---
+- name: Install packages
+  package:
+    name: "{{ item }}"
+  with_items: "{{ packages[ansible_distribution] }}"
+  when: packages[ansible_distribution] is defined
+
+- debug:
+    msg: "Not installing any packages, no package list defined for {{ ansible_distribution }}"
+
+- name: Pull dotfiles from github
+  git:
+    repo: https://github.com/azmodude/dotfiles
+    dest: /home/azmo/.dotfiles
+  become: yes
+  become_user: azmo
+  register: gitdotfiles
+
+- name: Install dotfiles
+  command: ./install
+  args:
+    chdir: /home/azmo/.dotfiles
+  become: yes
+  become_user: azmo
+  when: gitdotfiles.changed
+  register: install
+  failed_when: "'All commands have been executed' not in install.stdout"
+
