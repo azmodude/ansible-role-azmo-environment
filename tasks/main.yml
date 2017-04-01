@@ -7,20 +7,28 @@
 - debug:
     msg: "Not installing any packages, no package list defined for {{ ansible_distribution }}"
 
+- name: Check if User exists to install for
+  getent:
+    database: passwd
+    key: "{{ user }}"
+  register: getent
+  ignore_errors: True
+
 - name: Pull dotfiles from github
   git:
     repo: https://github.com/azmodude/dotfiles
-    dest: /home/azmo/.dotfiles
+    dest: "{{ dotfiles_destination }}"
   become: yes
-  become_user: azmo
+  become_user: "{{ user }}"
   register: gitdotfiles
+  when: not getent.failed
 
 - name: Install dotfiles
   command: ./install
   args:
-    chdir: /home/azmo/.dotfiles
+    chdir: "{{ dotfiles_destination }}"
   become: yes
-  become_user: azmo
+  become_user: "{{ user }}"
   when: gitdotfiles.changed
   register: install
   failed_when: "'All commands have been executed' not in install.stdout"

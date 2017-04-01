@@ -1,11 +1,14 @@
 ---
-common:
+user: azmo
+dotfiles_destination: /home/{{user}}/.dotfiles
+
+common_packages:
   - zsh
   - git
 
 mypackages:
   Ubuntu:
-    - "{{ common }}"
+    - "{{ common_packages }}"
 
   CentOS:
-    - "{{ common }}"
+    - "{{ common_packages }}"
