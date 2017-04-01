@@ -1,9 +1,8 @@
 ---
-- name: Install packages
-  package:
-    name: "{{ item }}"
-  with_items: "{{ packages[ansible_distribution] }}"
-  when: packages[ansible_distribution] is defined
+- include_role:
+    name: azmodude.packages
+  vars:
+    packages: "{{ mypackages }}"
 
 - debug:
     msg: "Not installing any packages, no package list defined for {{ ansible_distribution }}"

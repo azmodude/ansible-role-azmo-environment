@@ -3,7 +3,7 @@ common:
   - zsh
   - git
 
-packages:
+mypackages:
   Ubuntu:
     - "{{ common }}"
 
