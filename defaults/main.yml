@@ -1,14 +1,3 @@
 ---
 user: azmo
 dotfiles_destination: /home/{{user}}/.dotfiles
-
-common_packages:
-  - zsh
-  - git
-
-mypackages:
-  Ubuntu:
-    - "{{ common_packages }}"
-
-  CentOS:
-    - "{{ common_packages }}"

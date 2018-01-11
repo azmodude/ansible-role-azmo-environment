@@ -1,37 +1,71 @@
 ---
-- name: Install mypackages using azmodude.packages role
-  include_role:
-    name: azmodude.packages
-  vars:
-    packages: "{{ mypackages }}"
+- name: Become defined user
+  block:
+    - name: Pull dotfiles from github
+      git:
+        repo: https://github.com/azmodude/dotfiles
+        dest: "{{ dotfiles_destination }}"
+        update: False
+      become: yes
+      become_user: "{{ user }}"
+      register: gitdotfiles
 
-- debug:
-    msg: "Not installing any packages, no package list defined for {{ ansible_distribution }}"
-  when: mypackages[ansible_distribution] is not defined
+    - name: Install dotfiles
+      command: ./install
+      args:
+        chdir: "{{ dotfiles_destination }}"
+      become: yes
+      become_user: "{{ user }}"
+      when: gitdotfiles.changed
+      register: install
+      failed_when: "'All commands have been executed' not in install.stdout"
 
-- name: Check if User exists to install for
-  getent:
-    database: passwd
-    key: "{{ user }}"
-  register: getent
-  ignore_errors: True
+    - name: Check for NerdFonts
+      stat:
+        path: "/home/{{ user }}/.local/share/fonts/NerdFonts"
+      register: nerd_installed
 
-- name: Pull dotfiles from github
-  git:
-    repo: https://github.com/azmodude/dotfiles
-    dest: "{{ dotfiles_destination }}"
-  become: yes
+    - name: Install NerdFonts
+      block:
+        - name: Create temporary directory for NerdFonts
+          tempfile:
+            state: directory
+          register: nerd_tmp
+
+        - name: Clone NerdFonts
+          git:
+            repo: https://github.com/ryanoasis/nerd-fonts.git
+            dest: "{{ nerd_tmp.path }}"
+            depth: 1
+            update: False
+
+        - name: Install NerdFonts
+          command: ./install.sh --quiet
+          args:
+            chdir: "{{ nerd_tmp.path }}"
+            creates: "/home/{{ user}}/.local/fonts/NerdFonts"
+      when: not nerd_installed.stat.exists
+
+  become: True
   become_user: "{{ user }}"
-  register: gitdotfiles
-  when: getent.failed is not defined
 
-- name: Install dotfiles
-  command: ./install
-  args:
-    chdir: "{{ dotfiles_destination }}"
-  become: yes
-  become_user: "{{ user }}"
-  when: gitdotfiles.changed
-  register: install
-  failed_when: "'All commands have been executed' not in install.stdout"
+- name: Generate locales
+  block:
+    - name: Ensure wanted locales are in locale.gen
+      lineinfile:
+        path: /etc/locale.gen
+        state: present
+        regexp: '^\s*{{ item }}'
+        line: "{{ item }}"
+      with_items:
+        - "en_US.UTF-8 UTF-8"
+        - "de_DE.UTF-8 UTF-8"
+      register: locale
+
+    - name: Generate changed locales
+      command: locale-gen
+      when: locale.changed
+      register: locale_output
+      failed_when: "'Generation complete' not in locale_output.stdout"
+  become: True
 
