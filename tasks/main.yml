@@ -68,4 +68,5 @@
       register: locale_output
       failed_when: "'Generation complete' not in locale_output.stdout"
   become: True
+  when: ansible_distribution not in ('Fedora')
 
